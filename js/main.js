@@ -31,7 +31,8 @@ function handleTimerChange(second) {
 function handleTimerFinish() {
   // end game
   gameStatus = GAME_STATUS.FINISHED
-  setTimerText('Phương Mõm Chơi Ngu Quá 🤣🤣🤣')
+  setTimerText('Game Over 🤣🤣🤣')
+  showPlayAgainButton()
 }
 
 // TODOs
@@ -61,7 +62,7 @@ function handleColorClick(liElement) {
     const isWin = getInActiveColorList().length === 0
     if (isWin) {
       showPlayAgainButton()
-      setTimerText('You Win By Phương Mõm 🔥')
+      setTimerText('You Win 🔥')
       timer.clear()
 
       gameStatus = GAME_STATUS.FINISHED
@@ -80,7 +81,10 @@ function handleColorClick(liElement) {
     // reset selections for the next turn
     selections = []
 
-    gameStatus = GAME_STATUS.PLAYING
+    // race-condition for the next turn
+    if (gameStatus !== GAME_STATUS.FINISHED) {
+      gameStatus = GAME_STATUS.PLAYING
+    }
   }, 500)
 }
 
