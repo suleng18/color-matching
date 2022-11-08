@@ -1,4 +1,4 @@
-import { GAME_STATUS, PAIRS_COUNT, GAME_TIME } from './constants.js'
+import { GAME_STATUS, GAME_TIME, PAIRS_COUNT } from './constants.js'
 import {
   getColorElementList,
   getColorListElement,
@@ -6,11 +6,12 @@ import {
   getPlayAgainButton,
 } from './selectors.js'
 import {
-  getRandomColorPairs,
-  showPlayAgainButton,
-  setTimerText,
-  hidePlayAgainButton,
   createTimer,
+  getRandomColorPairs,
+  hidePlayAgainButton,
+  setBackgroundColor,
+  setTimerText,
+  showPlayAgainButton,
 } from './utils.js'
 
 // Global variables
@@ -23,15 +24,13 @@ let timer = createTimer({
 })
 
 function handleTimerChange(second) {
-  // show timer text
   const fullSecond = `0${second}`.slice(-2)
   setTimerText(fullSecond)
 }
 
 function handleTimerFinish() {
-  // end game
   gameStatus = GAME_STATUS.FINISHED
-  setTimerText('Game Over 🤣🤣🤣')
+  setTimerText('Game Over 😭')
   showPlayAgainButton()
 }
 
@@ -42,10 +41,17 @@ function handleTimerFinish() {
 // 4. Add timer
 // 5. Handle replay click
 
+// handleColorClick 1
+// handleColorClick 2
+// handleColorClick 3
+// setTimeout 2 --> reset selections
+// setTimeout 3 --> errors here
 function handleColorClick(liElement) {
   const shouldBlockClick = [GAME_STATUS.BLOCKING, GAME_STATUS.FINISHED].includes(gameStatus)
   const isClicked = liElement.classList.contains('active')
   if (!liElement || isClicked || shouldBlockClick) return
+
+  // show color for clicked cell
   liElement.classList.add('active')
 
   // save clicked cell to selections
@@ -58,15 +64,18 @@ function handleColorClick(liElement) {
   const isMatch = firstColor === secondColor
 
   if (isMatch) {
-    // check win
+    // can use either first or second color (as they are the same)
+    setBackgroundColor(firstColor)
+
     const isWin = getInActiveColorList().length === 0
     if (isWin) {
       showPlayAgainButton()
-      setTimerText('You Win 🔥')
+      setTimerText('YOU WIN! 🎉')
       timer.clear()
 
       gameStatus = GAME_STATUS.FINISHED
     }
+
     selections = []
     return
   }
@@ -74,6 +83,7 @@ function handleColorClick(liElement) {
   // in case of not match
   // remove active class for 2 li elements
   gameStatus = GAME_STATUS.BLOCKING
+
   setTimeout(() => {
     selections[0].classList.remove('active')
     selections[1].classList.remove('active')
@@ -81,7 +91,7 @@ function handleColorClick(liElement) {
     // reset selections for the next turn
     selections = []
 
-    // race-condition for the next turn
+    // race-condition check with handleTimerFinish
     if (gameStatus !== GAME_STATUS.FINISHED) {
       gameStatus = GAME_STATUS.PLAYING
     }
@@ -96,18 +106,20 @@ function initColors() {
   const liList = getColorElementList()
   liList.forEach((liElement, index) => {
     liElement.dataset.color = colorList[index]
+
     const overlayElement = liElement.querySelector('.overlay')
     if (overlayElement) overlayElement.style.backgroundColor = colorList[index]
   })
 }
 
-function attachEventsForColorList() {
+function attachEventForColorList() {
   const ulElement = getColorListElement()
   if (!ulElement) return
 
   // Event delegation
   ulElement.addEventListener('click', (event) => {
     if (event.target.tagName !== 'LI') return
+
     handleColorClick(event.target)
   })
 }
@@ -116,10 +128,11 @@ function resetGame() {
   // reset global vars
   gameStatus = GAME_STATUS.PLAYING
   selections = []
+
   // reset DOM elements
   // - remove active class from li
   // - hide replay button
-  // - clear you win / timer text
+  // - clear you win / timeout text
   const colorElementList = getColorElementList()
   for (const colorElement of colorElementList) {
     colorElement.classList.remove('active')
@@ -128,9 +141,13 @@ function resetGame() {
   hidePlayAgainButton()
   setTimerText('')
 
-  // re-generate new color
+  // re-generate new colors
   initColors()
 
+  // reset background color
+  setBackgroundColor('goldenrod')
+
+  // start a new game
   startTimer()
 }
 
@@ -145,11 +162,10 @@ function startTimer() {
   timer.start()
 }
 
-//main
+// main
 ;(() => {
-  // init colors
   initColors()
-  attachEventsForColorList()
+  attachEventForColorList()
   attachEventForPlayAgainButton()
   startTimer()
 })()
